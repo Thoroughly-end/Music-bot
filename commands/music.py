@@ -32,7 +32,7 @@ class Music(commands.Cog):   #繼承類別
             song = await link.convert_spotify(message)
             url = search.search_yt(song)
             await ctx.send(f"Now is playing {song}")
-            if not ctx.voice_client():   #若沒有建立語音連線
+            if not ctx.voice_client:   #若沒有建立語音連線
                 await Music.join(self, ctx)
             if ctx.voice_client.is_playing():   #若在播放音樂中
                 ctx.voice_client.pause()
