@@ -1,0 +1,6 @@
+yt-dlp
+asyncio
+beautifulsoup4
+spotipy
+discord.py[voice]
+discord
