@@ -4,3 +4,4 @@ beautifulsoup4
 spotipy
 discord.py[voice]
 discord
+ffmpeg
