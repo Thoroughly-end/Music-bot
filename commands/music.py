@@ -21,6 +21,8 @@ class Music(commands.Cog):   #繼承類別
     async def leave(self, ctx):
         voice_client = ctx.message.guild.voice_client
         try:
+            ctx.voice_client.pause()
+            self.queue = []
             await voice_client.disconnect(force = True)
         except:
             await ctx.send("I am not in a voice channel")
