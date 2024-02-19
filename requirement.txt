@@ -4,4 +4,9 @@ beautifulsoup4
 spotipy
 discord.py[voice]
 discord
-ffmpeg
+
+For Linux Ubuntu:
+sudo apt install ffmpeg
+
+For Windows:
+search for ffmpeg ,and install it

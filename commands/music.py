@@ -2,6 +2,7 @@ from discord.ext import commands
 import discord
 import link as link
 import search as search
+import asyncio
 
 class Music(commands.Cog):   #繼承類別
     def __init__(self, bot):
@@ -32,13 +33,14 @@ class Music(commands.Cog):   #繼承類別
         self.queue = []   #清空佇列
         if "open.spotify.com/track/" in message:   #若是單首歌曲
             song = await link.convert_spotify(message)
+            self.queue.append(song)
             url = search.search_yt(song)
-            await ctx.send(f"Now is playing {song}")
             if not ctx.voice_client:   #若沒有建立語音連線
                 await Music.join(self, ctx)
             if ctx.voice_client.is_playing():   #若在播放音樂中
                 ctx.voice_client.pause()
-            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.leave(self, ctx))
+            await ctx.send(f"Now is playing {song}")
+            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
         elif "open.spotify.com/playlist/" or "open.spotify.com/album/" in message:   #若是播放清單或專輯
             songs = link.get_spotify_playlist(message)
             for i in range(len(songs)):
@@ -50,7 +52,7 @@ class Music(commands.Cog):   #繼承類別
                 await Music.join(self, ctx)
             if ctx.voice_client.is_playing():   #若正在播放音樂
                 ctx.voice_client.pause()
-            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: next_song(ctx, self.queue))
+            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
 
     @commands.command(name = 'skip', help = 'To skip the song')
     async def skip(self, ctx):
@@ -58,22 +60,36 @@ class Music(commands.Cog):   #繼承類別
         await ctx.send(f"Now is playing {self.queue[1]}")
         self.queue.remove(self.queue[0])
         ctx.voice_client.pause()
-        if len(self.queue) == 0:
-            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.leave(self, ctx))
-        else:
-            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: next_song(ctx, self.queue))
+        ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
     
     @commands.command(name = 'info', help = 'To get what is playing now')
     async def info(self, ctx):
         ctx.send(f"Now is playing {self.queue[0]}")
 
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):   #在播放完音樂之後自動退出
+        if not member.id == self.bot.user.id:   #確保是被機器人本身觸發
+            return
+        elif before.channel is None:   #確保不是因為機器人斷線觸發
+            voice_client = after.channel.guild.voice_client
+            time = 0
+            while True:
+                await asyncio.sleep(1)   #每秒檢查一次
+                time = time + 1
+                if voice_client.is_playing() and not voice_client.is_paused():   #音樂結束時
+                    time = 0
+                if time == 30:   #30秒時
+                    await voice_client.disconnect()   #斷線
+                if not voice_client.is_connected():   #若無連線則跳出迴圈
+                    break
+    
+    def next_song(self, ctx):
+        if len(self.queue) == 1:   #若音樂佇列只剩最後一首歌(已經播放完畢)
+            self.queue = []   #清空佇列
+        else:
+            url = search.search_yt(self.queue[1])
+            self.queue.remove(self.queue[0])
+            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
+
 async def setup(bot):
     await bot.add_cog(Music(bot))
-
-def next_song(ctx, queue):
-        url = search.search_yt(queue[1])
-        queue.remove(queue[0])
-        if len(queue) == 0:
-            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.leave(ctx))
-        else:
-            ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: next_song(ctx, queue))

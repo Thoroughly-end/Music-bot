@@ -20,6 +20,16 @@ async def load_extensions():    #載入cog
         if filename.endswith(".py"):
             await bot.load_extension(f"commands.{filename[:-3]}")
 
+@bot.command()
+async def reload(ctx):
+    for filename in os.listdir("./commands"):
+        if filename.endswith(".py"):
+            await bot.unload_extension(f"commands.{filename[:-3]}")
+    for filename in os.listdir("./commands"):
+        if filename.endswith(".py"):
+            await bot.load_extension(f"commands.{filename[:-3]}")
+    await ctx.send("reload successfully.")
+
 if __name__ == "__main__":
     asyncio.run(load_extensions())
     bot.run(config.Bot_TOKEN)
