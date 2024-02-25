@@ -104,6 +104,7 @@ class Music(commands.Cog):   #繼承類別
                     new_list.append(songName_artist)
                     a = 1
             self.queue = new_list
+            await ctx.send("Switch to loop mode successfully")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):   #在播放完音樂之後自動退出
