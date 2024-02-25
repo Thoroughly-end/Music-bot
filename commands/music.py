@@ -3,12 +3,15 @@ import discord
 import link as link
 import search as search
 import asyncio
+import random
 
 class Music(commands.Cog):   #繼承類別
     def __init__(self, bot):
         self.bot = bot
     
     queue = []   #音樂佇列
+    mode = ''
+    playlist_url = ""
     
     @commands.command(name='join', help='Tells the bot to join the voice channel')
     async def join(self, ctx):
@@ -31,6 +34,8 @@ class Music(commands.Cog):   #繼承類別
     @commands.command(name = 'play', help = 'To play songs')
     async def play(self, ctx, message: str = ""):
         self.queue = []   #清空佇列
+        self.mode = ''
+        self.playlist_url = ''
         if "open.spotify.com/track/" in message:   #若是單首歌曲
             song = await link.convert_spotify(message)
             self.queue.append(song)
@@ -42,6 +47,8 @@ class Music(commands.Cog):   #繼承類別
             await ctx.send(f"Now is playing {song}")
             ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
         elif "open.spotify.com/playlist/" or "open.spotify.com/album/" in message:   #若是播放清單或專輯
+            self.mode = 'loop'
+            self.playlist_url = message
             songs = link.get_spotify_playlist(message)
             for i in range(len(songs)):
                 songName_artist = songs[i]['songname'] + " " + songs[i]['artist']
@@ -65,6 +72,38 @@ class Music(commands.Cog):   #繼承類別
     @commands.command(name = 'info', help = 'To get what is playing now')
     async def info(self, ctx):
         ctx.send(f"Now is playing {self.queue[0]}")
+    
+    @commands.command(name = 'shuffle', help = 'To switch to shuffle mode')
+    async def shuffle(self, ctx):
+        if len(self.queue) <= 1:
+            await ctx.send("There is no song left")
+        elif self.mode == 'shuffle':
+            await ctx.send("It is already shuffle mode")
+        else:
+            playing = self.queue[0]
+            random.shuffle(self.queue)
+            self.queue.remove(playing)
+            self.queue.insert(0, playing)
+            self.mode = 'shuffle'
+            await ctx.send("Switch to shuffle mode successfully")
+    
+    @commands.command(name = 'loop', help = 'To switch to loop mode')
+    async def loop(self, ctx):
+        if len(self.queue) <= 1:
+            await ctx.send("There is no song left")
+        elif self.mode == 'loop':
+            await ctx.send("It is already loop mode")
+        else:
+            playing = self.queue[0]
+            songs = link.get_spotify_playlist(self.playlist_url)
+            new_list = []
+            a = 0
+            for i in range(len(songs)):
+                songName_artist = songs[i]['songname'] + " " + songs[i]['artist']
+                if songName_artist == playing or a == 1:
+                    new_list.append(songName_artist)
+                    a = 1
+            self.queue = new_list
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):   #在播放完音樂之後自動退出
