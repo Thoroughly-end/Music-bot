@@ -1,9 +1,9 @@
 import urllib.request as request
-from enum import Enum
 import spotipy
 from bs4 import BeautifulSoup
 from config import config
 from spotipy.oauth2 import SpotifyClientCredentials
+from googleapiclient.discovery import build # API client library
 
 sp_api = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id = config.SPOTIFY_ID, client_secret = config.SPOTIFY_SECRET))   #設定Spotify class中的各種參數
 
@@ -90,4 +90,20 @@ def get_spotify_playlist(url):   #取得播放清單中的歌曲和作者
                     Artist = raw_songs[i]['artist']
                     dic = {'songname' : Name, 'artist' : Artist}
                     songs.append(dic)
+    return songs
+
+def get_song_name(songid):   #取得YT歌曲名稱
+    youtube = build('youtube', 'v3', developerKey=config.YOUTUBE_API_KEY)
+    request = youtube.videos().list(part="snippet ",id=songid)
+    response = request.execute()
+    return response['items'][0]['snippet']['title']
+
+def get_yt_playlist(playlist_id):   #取得YT播放清單歌曲之網址及名稱
+    youtube = build('youtube', 'v3', developerKey=config.YOUTUBE_API_KEY)
+    request = youtube.playlistItems().list(part = "snippet",maxResults = 50,playlistId = playlist_id)
+    response = request.execute()
+    songs = []
+    for i in range(len(response['items'])):
+        dic={'SongName' : str(response['items'][i]['snippet']['title']), 'url' : "https://www.youtube.com/watch?v="+str(response['items'][i]['snippet']['resourceId']['videoId'])}
+        songs.append(dic)
     return songs
