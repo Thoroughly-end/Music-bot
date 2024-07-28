@@ -49,7 +49,7 @@ class Music(commands.Cog):   #繼承類別
             await ctx.send(f"Now is playing {song}")
             ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
 
-        elif "open.spotify.com/playlist/" in self.playlist_url or "open.spotify.com/album/" in self.playlist_url:   #若是播放清單或專輯
+        elif "open.spotify.com/playlist/" in message or "open.spotify.com/album/" in message:   #若是播放清單或專輯
             self.mode = 'loop'
             self.playlist_url = str(message)
             songs = link.get_spotify_playlist(message)

@@ -4,6 +4,7 @@ beautifulsoup4
 spotipy
 discord.py[voice]
 discord
+google-api-python-client
 
 For Linux Ubuntu:
 sudo apt install ffmpeg
