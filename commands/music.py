@@ -64,14 +64,19 @@ class Music(commands.Cog):   #繼承類別
                 ctx.voice_client.pause()
             ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
         
-        elif "https://www.youtube.com/watch?v=" in message:   #若是YT單曲
+        elif "https://www.youtube.com/watch?v=" in message or "https://youtu.be/" in message:   #若是YT單曲
             url = str(message)
-            if "&list=" in url:   #取得歌曲id
-                id = url.replace('https://www.youtube.com/watch?v=', '')
-                num = id.find("&list=")
+            if "https://www.youtube.com/watch?v=" in url:
+                if "&list=" in url:   #取得歌曲id
+                    id = url.replace('https://www.youtube.com/watch?v=', '')
+                    num = id.find("&list=")
+                    id = id[:num]
+                else:
+                    id = url.replace('https://www.youtube.com/watch?v=', '')
+            elif "https://youtu.be/" in url:
+                id = url.replace('https://youtu.be/', '')
+                num = id.find("?si=")
                 id = id[:num]
-            else:
-                id = url.replace('https://www.youtube.com/watch?v=', '')
             song = link.get_song_name(id)
             dlurl = search.url_search_yt(url)
             self.queue.append(song)
