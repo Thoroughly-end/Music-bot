@@ -27,32 +27,31 @@ class Music(commands.Cog):   #繼承類別
         voice_client = ctx.message.guild.voice_client
         try:
             ctx.voice_client.pause()
-            self.queue = []
             await voice_client.disconnect(force = True)
         except:
             await ctx.send("I am not in a voice channel")
     
-    @commands.command(name = 'play', help = 'To play songs')
-    async def play(self, ctx, message):
+    @commands.command(name = 'play', help = 'To play music', with_app_command=True)
+    async def play(self, ctx: commands.Context, music_link):
         self.queue = []   #清空佇列
         self.mode = ''
         self.playlist_url = ''
         self.yt_url_list = []
-        if "open.spotify.com/track/" in message:   #若是單首歌曲
-            song = await link.convert_spotify(message)
+        if "open.spotify.com/track/" in music_link:   #若是單首歌曲
+            song = await link.convert_spotify(music_link)
             self.queue.append(song)
             url = search.search_yt(song)
             if not ctx.voice_client:   #若沒有建立語音連線
                 await Music.join(self, ctx)
             if ctx.voice_client.is_playing():   #若在播放音樂中
                 ctx.voice_client.pause()
-            await ctx.send(f"Now is playing {song}")
+            await ctx.reply(f"Now is playing {song}")
             ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
 
-        elif "open.spotify.com/playlist/" in message or "open.spotify.com/album/" in message:   #若是播放清單或專輯
+        elif "open.spotify.com/playlist/" in music_link or "open.spotify.com/album/" in music_link:   #若是播放清單或專輯
             self.mode = 'loop'
-            self.playlist_url = str(message)
-            songs = link.get_spotify_playlist(message)
+            self.playlist_url = str(music_link)
+            songs = link.get_spotify_playlist(music_link)
             for i in range(len(songs)):
                 songName_artist = songs[i]['songname'] + " " + songs[i]['artist']
                 self.queue.append(songName_artist)   #將擷取到的音樂輸入佇列
@@ -64,19 +63,22 @@ class Music(commands.Cog):   #繼承類別
                 ctx.voice_client.pause()
             ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
         
-        elif "https://www.youtube.com/watch?v=" in message or "https://youtu.be/" in message:   #若是YT單曲
-            url = str(message)
+        elif "https://www.youtube.com/watch?v=" in music_link or "https://youtu.be/" in music_link:   #若是YT單曲
+            url = str(music_link)
             if "https://www.youtube.com/watch?v=" in url:
-                if "&list=" in url:   #取得歌曲id
+                if "&" in url:   #取得歌曲id
                     id = url.replace('https://www.youtube.com/watch?v=', '')
                     num = id.find("&list=")
                     id = id[:num]
                 else:
                     id = url.replace('https://www.youtube.com/watch?v=', '')
             elif "https://youtu.be/" in url:
-                id = url.replace('https://youtu.be/', '')
-                num = id.find("?si=")
-                id = id[:num]
+                if "?" in url:
+                    url = url.replace("https://youtu.be/", "")
+                    num = url.find("?")
+                    id = url[:num]
+                else:
+                    id = url.replace("https://youtu.be/", "")
             song = link.get_song_name(id)
             dlurl = search.url_search_yt(url)
             self.queue.append(song)
@@ -87,9 +89,9 @@ class Music(commands.Cog):   #繼承類別
             await ctx.send(f"Now is playing {song}")
             ctx.voice_client.play(discord.FFmpegPCMAudio(dlurl, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
         
-        elif "https://youtube.com/playlist?list=" in message:   #若是YT播放清單
+        elif "https://youtube.com/playlist?list=" in music_link:   #若是YT播放清單
             self.mode = 'loop'
-            self.playlist_url = str(message)
+            self.playlist_url = str(music_link)
             id = self.playlist_url.replace('https://youtube.com/playlist?list=', '')   #取得播放清單id
             num = id.find('&')
             id = id[:num]
@@ -226,7 +228,7 @@ class Music(commands.Cog):   #繼承類別
             while True:
                 await asyncio.sleep(1)   #每秒檢查一次
                 time = time + 1
-                if voice_client.is_playing() and not voice_client.is_paused():   #音樂結束時
+                if voice_client.is_playing() and not voice_client.is_paused() and not len(voice_client.channel.members) == 1:   #音樂結束時
                     time = 0
                 if time == 30:   #30秒時
                     await voice_client.disconnect()   #斷線
@@ -234,10 +236,37 @@ class Music(commands.Cog):   #繼承類別
                     break
     
     def next_song(self, ctx):
-        if ctx.voice_client.is_playing():
-            ctx.voice_client.pause()
         if len(self.queue) == 1:   #若音樂佇列只剩最後一首歌(已經播放完畢)
             self.queue = []   #清空佇列
+            self.yt_url_list = []
+            if self.mode == "loop":
+                if "https://youtube.com/playlist?list=" in self.playlist_url:
+                    id = self.playlist_url.replace('https://youtube.com/playlist?list=', '')   #取得播放清單id
+                    num = id.find('&')
+                    id = id[:num]
+                    songs = link.get_yt_playlist(id)
+                    dlurl = search.url_search_yt(songs[0]['url'])
+                    for i in range(len(songs)):
+                        self.queue.append(songs[i]['SongName'])
+                        self.yt_url_list.append(songs[i]['url'])
+                    try:
+                        ctx.voice_client.play(discord.FFmpegPCMAudio(dlurl, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
+                    except Exception:
+                        Music.next_song(self,ctx)
+                elif "open.spotify.com/playlist/" in self.playlist_url or "open.spotify.com/album/" in self.playlist_url:
+                    songs = link.get_spotify_playlist(self.playlist_url)
+                    for i in range(len(songs)):
+                        songName_artist = songs[i]['songname'] + " " + songs[i]['artist']
+                        self.queue.append(songName_artist)   #將擷取到的音樂輸入佇列
+                    songName_artist = songs[0]['songname'] + " " + songs[0]['artist']
+                    url = search.search_yt(songName_artist)
+                    try:
+                        ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
+                    except Exception:
+                        Music.next_song(self,ctx)
+            else:
+                pass
+            
         else:
             if "https://youtube.com/playlist?list=" in self.playlist_url:
                 url = self.yt_url_list[1]

@@ -96,7 +96,10 @@ def get_song_name(songid):   #取得YT歌曲名稱
     youtube = build('youtube', 'v3', developerKey=config.YOUTUBE_API_KEY)
     request = youtube.videos().list(part="snippet ",id=songid)
     response = request.execute()
-    return response['items'][0]['snippet']['title']
+    try:
+        return response['items'][0]['snippet']['title']
+    except Exception:
+        pass
 
 def get_yt_playlist(playlist_id):   #取得YT播放清單歌曲之網址及名稱
     youtube = build('youtube', 'v3', developerKey=config.YOUTUBE_API_KEY)
