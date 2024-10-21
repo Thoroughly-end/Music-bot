@@ -26,7 +26,7 @@ class Music(commands.Cog):   #繼承類別
     async def leave(self, ctx):
         voice_client = ctx.message.guild.voice_client
         try:
-            ctx.voice_client.pause()
+            ctx.voice_client.stop()
             await voice_client.disconnect(force = True)
         except:
             await ctx.send("I am not in a voice channel")
@@ -44,7 +44,7 @@ class Music(commands.Cog):   #繼承類別
             if not ctx.voice_client:   #若沒有建立語音連線
                 await Music.join(self, ctx)
             if ctx.voice_client.is_playing():   #若在播放音樂中
-                ctx.voice_client.pause()
+                ctx.voice_client.stop()
             await ctx.reply(f"Now is playing {song}")
             ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
 
@@ -60,7 +60,7 @@ class Music(commands.Cog):   #繼承類別
             if not ctx.voice_client:   #若沒有語音連線
                 await Music.join(self, ctx)
             if ctx.voice_client.is_playing():   #若正在播放音樂
-                ctx.voice_client.pause()
+                ctx.voice_client.stop()
             ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
         
         elif "https://www.youtube.com/watch?v=" in music_link or "https://youtu.be/" in music_link:   #若是YT單曲
@@ -85,7 +85,7 @@ class Music(commands.Cog):   #繼承類別
             if not ctx.voice_client:   #若沒有建立語音連線
                 await Music.join(self, ctx)
             if ctx.voice_client.is_playing():   #若在播放音樂中
-                ctx.voice_client.pause()
+                ctx.voice_client.stop()
             await ctx.send(f"Now is playing {song}")
             ctx.voice_client.play(discord.FFmpegPCMAudio(dlurl, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
         
@@ -103,7 +103,7 @@ class Music(commands.Cog):   #繼承類別
             if not ctx.voice_client:   #若沒有語音連線
                 await Music.join(self, ctx)
             if ctx.voice_client.is_playing():   #若正在播放音樂
-                ctx.voice_client.pause()
+                ctx.voice_client.stop()
             ctx.voice_client.play(discord.FFmpegPCMAudio(dlurl, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
 
 
@@ -115,17 +115,18 @@ class Music(commands.Cog):   #繼承類別
             self.queue.remove(self.queue[0])
             dlurl = search.url_search_yt(url)
             try:
-                ctx.voice_client.pause()
+                ctx.voice_client.stop()
                 ctx.voice_client.play(discord.FFmpegPCMAudio(dlurl, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
             except Exception:
                 Music.next_song(self,ctx)
         elif "open.spotify.com/playlist/" in self.playlist_url or "open.spotify.com/album/" in self.playlist_url:
             url = search.search_yt(self.queue[1])
             self.queue.remove(self.queue[0])
-            ctx.voice_client.pause()
+            ctx.voice_client.stop()
             ctx.voice_client.play(discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'), after = lambda x: Music.next_song(self, ctx))
         else:
-            pass
+            voice_client = ctx.channel.guild.voice_client
+            voice_client.stop()
     
     @commands.command(name = 'info', help = 'To get what is playing now')
     async def info(self, ctx):
@@ -265,7 +266,8 @@ class Music(commands.Cog):   #繼承類別
                     except Exception:
                         Music.next_song(self,ctx)
             else:
-                pass
+                voice_client = ctx.channel.guild.voice_client
+                voice_client.stop()
             
         else:
             if "https://youtube.com/playlist?list=" in self.playlist_url:
