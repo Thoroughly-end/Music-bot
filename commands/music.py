@@ -229,7 +229,9 @@ class Music(commands.Cog):   #繼承類別
             while True:
                 await asyncio.sleep(1)   #每秒檢查一次
                 time = time + 1
-                if voice_client.is_playing() and not voice_client.is_paused() and not len(voice_client.channel.members) == 1:   #音樂結束時
+                if voice_client.is_playing() and not voice_client.is_paused():   #音樂結束時
+                    time = 0
+                if len(voice_client.channel.members) != 1:
                     time = 0
                 if time == 30:   #30秒時
                     await voice_client.disconnect()   #斷線
