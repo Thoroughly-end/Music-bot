@@ -74,9 +74,9 @@ class Music(commands.Cog):   #繼承類別
                     id = url.replace('https://www.youtube.com/watch?v=', '')
             elif "https://youtu.be/" in url:
                 if "?" in url:
-                    url = url.replace("https://youtu.be/", "")
-                    num = url.find("?")
-                    id = url[:num]
+                    tmpurl = url.replace("https://youtu.be/", "")
+                    num = tmpurl.find("?")
+                    id = tmpurl[:num]
                 else:
                     id = url.replace("https://youtu.be/", "")
             song = link.get_song_name(id)
