@@ -5,6 +5,7 @@ spotipy
 discord.py[voice]
 discord
 google-api-python-client
+openai
 
 For Linux Ubuntu:
 sudo apt install ffmpeg
