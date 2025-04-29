@@ -4,7 +4,7 @@ from config import config
 import asyncio
 
 def ai_get_songs(song):
-    content = "I like to listen "+song+".What songs I am likely to love?"
+    content = "I like to listen "+song+".What two songs I am likely to love?"
     client = OpenAI(api_key = config.OPENAI_API_KEY)
     response = client.responses.create(
     model="gpt-4.1",

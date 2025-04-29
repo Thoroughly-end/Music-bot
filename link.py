@@ -14,7 +14,7 @@ async def convert_spotify(url):   #將Spotify網址轉換成歌名加作者
         soup = BeautifulSoup(page, 'html.parser')
         title = soup.find('title')
         title = title.string
-        title = title.replace('- song and lyrics by ', '')
+        title = title.replace('- song and lyrics ', '')
         title = title.replace('| Spotify', '')
         result = title
     return result
